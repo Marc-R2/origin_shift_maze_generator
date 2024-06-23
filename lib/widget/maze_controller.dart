@@ -29,5 +29,13 @@ class MazeController {
     }
   }
 
-  void onUpdate((int, int) tile) => _tileUpdateListeners[tile]?.call();
+  bool _updatesEnabled = true;
+
+  void onUpdate((int, int) tile) {
+    if(_updatesEnabled) _tileUpdateListeners[tile]?.call();
+  }
+
+  void enableUpdates() => _updatesEnabled = true;
+
+  void disableUpdates() => _updatesEnabled = false;
 }

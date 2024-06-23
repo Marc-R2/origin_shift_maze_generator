@@ -8,6 +8,7 @@ class Maze {
   Maze({
     required this.width,
     required this.height,
+    int resolution = 3,
   }) {
     MazeNode? stemmRoot;
     for (var x = 0; x < width; x++) {
@@ -24,6 +25,7 @@ class Maze {
             BaseMazeNode(maze: this, x: x, y: y, parent: localRoot);
       }
     }
+    renewUpdateTargets(resolution: resolution);
   }
 
   final int width;
@@ -33,14 +35,36 @@ class Maze {
   final Map<(int, int), MazeNode> _nodes = {};
   final Map<(int, int), (int, int)> _parents = {};
 
+  final List<(int, int)> _updateTargets = [];
+
   MazeNode? getNode((int, int) pos) => _nodes[pos];
 
   Iterable<MazeNode> getNeighborsWeighted(MazeNode node) sync* {
-    if (node.hasBottomWall && node.hasBottom) yield node.bottom!;
-    if (node.hasRightWall && node.hasRight) yield node.right!;
-    if (node.hasTopWall && node.hasTop) yield node.top!;
-    if (node.hasLeftWall && node.hasLeft) yield node.left!;
-    yield* getNeighbors(node);
+    final target = _updateTargets.firstOrNull;
+    yield* getNeighbors(node).toList();
+    yield* getNeighbors(node).toList();
+    if (target == null) return;
+
+    if (target.$2 < node.y) {
+      yield node.top!;
+      yield node.top!;
+      yield node.top!;
+    } else if (target.$2 > node.y) {
+      yield node.bottom!;
+      yield node.bottom!;
+      yield node.bottom!;
+    }
+    if (target.$1 < node.x) {
+      yield node.left!;
+      yield node.left!;
+      yield node.left!;
+    } else if (target.$1 > node.x) {
+      yield node.right!;
+      yield node.right!;
+      yield node.right!;
+    }
+
+    _updateTargets.remove(node.position);
   }
 
   Iterable<MazeNode> getNeighbors(MazeNode node) sync* {
@@ -50,14 +74,48 @@ class Maze {
     if (node.left != null) yield node.left!;
   }
 
+  void renewUpdateTargets({int resolution = 3}) {
+    _updateTargets.clear();
+    // Fill the update targets with positions reduced by the resolution
+    // resolution = 1 -> every position
+    // resolution = 3 -> 1 target in every 3x3 area
+    for (var x = 0; x < width; x += resolution) {
+      for (var y = 0; y < height; y += resolution) {
+        _updateTargets.add((x, y));
+      }
+    }
+
+    void addIfNotContains(int x, int y) {
+      if (_updateTargets.contains((x, y))) return;
+      _updateTargets.add((x, y));
+    }
+
+    // Make sure the borders are always in the update targets
+    for (var x = 0; x < width; x += resolution) {
+      addIfNotContains(x, 0);
+      addIfNotContains(x, height - 1);
+    }
+    for (var y = 0; y < height; y += resolution) {
+      addIfNotContains(0, y);
+      addIfNotContains(width - 1, y);
+    }
+    _updateTargets.shuffle();
+  }
+
   void originShift([int steps = 1]) {
     for (var i = 0; i < steps; i++) {
       originShiftStep();
     }
   }
 
+  void originShiftUntilEmpty() {
+    while (_updateTargets.isNotEmpty) {
+      originShiftStep();
+    }
+  }
+
   void originShiftStep() {
-    final rootNeighbors = getNeighbors(root).toList()..shuffle();
+    final rootNeighbors = getNeighborsWeighted(root).toList()..shuffle();
     if (rootNeighbors.isEmpty) return;
 
     final newRoot = rootNeighbors.first.asRoot;

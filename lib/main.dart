@@ -34,17 +34,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  Maze maze = Maze(width: 80, height: 42);
+  Maze maze = Maze(width: 80, height: 42, resolution: 2);
 
   late MazeController mazeController = MazeController(maze);
 
-  void _incrementCounter() async {
-    for (var i = 0; i < 10000; i++) {
-      await Future.delayed(const Duration(milliseconds: 1));
-      maze.originShift();
-    }
+  void _regenMaze() async {
+    maze.renewUpdateTargets(resolution: 4);
+    final t1 = DateTime.now();
+    mazeController.disableUpdates();
+    maze.originShiftUntilEmpty();
+    mazeController.enableUpdates();
+    final t2 = DateTime.now();
+    print('Took: ${t2.difference(t1).inMilliseconds}ms');
+    setState(() {});
   }
 
   @override
@@ -56,9 +58,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(child: MazeBuild(maze: mazeController)),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: _regenMaze,
+        tooltip: 'Re-Generate Maze',
+        child: const Icon(Icons.refresh),
       ),
     );
   }
