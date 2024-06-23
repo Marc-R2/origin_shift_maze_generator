@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:origin_shift_maze_generator/maze/direction.dart';
-import 'package:origin_shift_maze_generator/maze/maze_tile_info.dart';
+import 'package:origin_shift_maze_generator/widget/maze_controller.dart';
 
-class MazeTile extends StatelessWidget {
+class MazeTile extends StatefulWidget {
   const MazeTile({
     super.key,
-    required this.tileInfo,
+    required this.controller,
+    required this.tile,
   });
 
-  final MazeTileInfo tileInfo;
+  final MazeController controller;
+  final (int, int) tile;
+
+  @override
+  State<MazeTile> createState() => _MazeTileState();
+}
+
+class _MazeTileState extends State<MazeTile> {
+  @override
+  void initState() {
+    widget.controller.addTileUpdateListener(widget.tile, update);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeTileUpdateListener(widget.tile);
+    super.dispose();
+  }
+
+  void update() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
     const borderSide = BorderSide(color: Colors.black);
+
+    final tileInfo = widget.controller.maze.getNode(widget.tile)?.tileInfo;
+    if (tileInfo == null) return const SizedBox(width: 16, height: 16);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 64),
       width: 16,

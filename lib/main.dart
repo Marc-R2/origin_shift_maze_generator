@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:origin_shift_maze_generator/maze/maze.dart';
 import 'package:origin_shift_maze_generator/widget/maze_builder.dart';
+import 'package:origin_shift_maze_generator/widget/maze_controller.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,10 +38,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Maze maze = Maze(width: 80, height: 42);
 
+  late MazeController mazeController = MazeController(maze);
+
   void _incrementCounter() async {
     for (var i = 0; i < 10000; i++) {
       await Future.delayed(const Duration(milliseconds: 1));
-      setState(maze.originShift);
+      maze.originShift();
     }
   }
 
@@ -51,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(child: MazeBuild(maze: maze)),
+      body: Center(child: MazeBuild(maze: mazeController)),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',

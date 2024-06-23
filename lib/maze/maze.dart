@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:origin_shift_maze_generator/maze/base_maze_node.dart';
 import 'package:origin_shift_maze_generator/maze/maze_node.dart';
 import 'package:origin_shift_maze_generator/maze/root_maze_node.dart';
@@ -14,11 +16,11 @@ class Maze {
       } else {
         stemmRoot = BaseMazeNode(maze: this, x: x, y: 0, parent: stemmRoot);
       }
-      nodes[stemmRoot.position] = stemmRoot;
+      _nodes[stemmRoot.position] = stemmRoot;
       var localRoot = stemmRoot;
 
       for (var y = 1; y < height; y++) {
-        localRoot = nodes[(x, y)] =
+        localRoot = _nodes[(x, y)] =
             BaseMazeNode(maze: this, x: x, y: y, parent: localRoot);
       }
     }
@@ -28,10 +30,10 @@ class Maze {
   final int height;
 
   late RootMazeNode root;
-  final Map<(int, int), MazeNode> nodes = {};
-  final Map<(int, int), (int, int)> parents = {};
+  final Map<(int, int), MazeNode> _nodes = {};
+  final Map<(int, int), (int, int)> _parents = {};
 
-  MazeNode? getNode(int x, int i) => nodes[(x, i)];
+  MazeNode? getNode((int, int) pos) => _nodes[pos];
 
   Iterable<MazeNode> getNeighborsWeighted(MazeNode node) sync* {
     if (node.hasBottomWall && node.hasBottom) yield node.bottom!;
@@ -64,13 +66,24 @@ class Maze {
   }
 
   T updateNode<T extends MazeNode>(T node) {
-    return nodes[node.position] = node;
+    final newNode = _nodes[node.position] = node;
+    _nodeUpdates.add(newNode.position);
+    return newNode;
   }
 
   void setParent(MazeNode child, MazeNode parent) {
-    parents[child.position] = parent.position;
+    _parents[child.position] = parent.position;
+    _parentUpdates.add(child.position);
   }
 
   MazeNode getParent(BaseMazeNode baseMazeNode) =>
-      nodes[parents[baseMazeNode.position]!]!;
+      _nodes[_parents[baseMazeNode.position]!]!;
+
+  final _nodeUpdates = StreamController<(int, int)>.broadcast();
+
+  Stream<(int, int)> get nodeUpdates => _nodeUpdates.stream;
+
+  final _parentUpdates = StreamController<(int, int)>.broadcast();
+
+  Stream<(int, int)> get parentUpdates => _parentUpdates.stream;
 }

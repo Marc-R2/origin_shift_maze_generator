@@ -17,7 +17,7 @@ abstract class MazeNode {
   (int, int) get position => (x, y);
 
   MazeNode? getNodeRelative(int x, int y) =>
-      maze.getNode(this.x + x, this.y + y);
+      maze.getNode((this.x + x, this.y + y));
 
   MazeNode? get top => getNodeRelative(0, -1);
 
